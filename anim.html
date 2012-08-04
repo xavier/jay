@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+  <title>Jay</title>
+  <script type="text/javascript" src="jay.js"></script>
+</head>
+<style type="text/css">
+
+body {
+  background-color: #000;
+  font-family: "Helvetica", "Arial", sans-serif;
+  color: #999;
+}
+
+#container {
+  width: 600px;
+  margin: 0 auto;
+}
+
+</style>
+<body>
+  <div id="container">
+    <canvas id="canvas" width="640px" height="480px">
+      Your browser has no canvas support.
+    </canvas>
+  </div>
+
+  <script type="text/javascript">
+
+    window.requestAnimFrame = (function(){
+      return  window.requestAnimationFrame       ||
+              window.webkitRequestAnimationFrame ||
+              window.mozRequestAnimationFrame    ||
+              window.oRequestAnimationFrame      ||
+              window.msRequestAnimationFrame     ||
+              function( callback ){
+                window.setTimeout(callback, 1000 / 10);
+              };
+    })();
+
+
+    var canvas = document.getElementById("canvas");
+    var context = canvas.getContext('2d');
+    var imageData = context.createImageData(canvas.width, canvas.height);
+
+    var scene = new Jay.Scene({
+      backgroundColor: Jay.Color.BLACK,
+      camera: new Jay.Camera(
+        new Jay.Vector(200, 300, 600),
+        new Jay.Vector(0, 0, 0),
+        -2.35
+      ),
+      light: new Jay.Vector(-300*5, 1000, 200*5),
+      models: [
+        // Floor
+        new Jay.Plane({
+          normal: new Jay.Vector(0, -1, 0),
+          distance: -250,
+          material: new Jay.Material({color: new Jay.Color(0.6), diffuse: 0.3, reflection:0.1})
+        }),
+      ]
+    });
+
+    var numSphere = 30;
+    for (var i = 0; i < numSphere; i++) {
+      var h = i / numSphere;
+      var a = Math.rad(i, numSphere);
+      var r = 500;
+      var s = new Jay.Sphere({
+        location: new Jay.Vector(Math.cos(a)*r, Math.cos(a*6)*100, Math.sin(a)*r),
+        radius: 50,
+        material: new Jay.Material({color: Jay.Color.fromHSV(h, 0.7, 0.9), diffuse: 0.1, reflection:0.3})
+      });
+
+      scene.models.push(s);
+    }
+
+    var renderOptions = {}
+
+    var jay = new Jay.Renderer(new Jay.Image(imageData));
+    jay.options.interpolation = 4;
+    jay.options.shadows       = true;
+    jay.options.reflections   = false;  // Reflections are a little botched ATM
+
+    var steps = 150;
+    var step = 0;
+
+    (function animStep() {
+      window.requestAnimFrame(animStep);
+      var a = step;
+
+      // Move the camera around
+      scene.camera.rvp.x = 400*Math.cos(Math.rad(a, steps));
+      scene.camera.rvp.y = 200+150*Math.sin(Math.rad(a, steps*0.5));
+      scene.camera.rvp.z = 400*Math.sin(Math.rad(a, steps*0.9));
+
+      // Move the light around
+      scene.light.x = 1000*Math.cos(Math.rad(a, steps*0.3));
+      scene.light.z = 1000*Math.sin(Math.rad(a, steps*0.4));
+
+      jay.render(scene, renderOptions);
+      context.putImageData(imageData, 0, 0);
+      step += 1;
+    })();
+
+
+  </script>
+</body>
+</html>
